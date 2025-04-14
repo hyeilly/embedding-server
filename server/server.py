@@ -22,7 +22,7 @@ class Embedder(embed_pb2_grpc.EmbedderServicer):
 
         response.dimension = dimension  # 차원 추가
 
-        print(f"Generated embeddings: {embeddings}")
+        print(f"Generated embeddings: {embeddings.tolist()}")
         return response
 
 def serve():

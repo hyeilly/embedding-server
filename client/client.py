@@ -8,9 +8,12 @@ import numpy as np
 
 
 def run():
+    texts = input("문장을 입력하세요 (쉼표로 구분): ").split(",")
+    texts = [text.strip() for text in texts]  # 각 텍스트의 양옆 공백 제거
+
     with grpc.insecure_channel('localhost:50051') as channel:
         stub = embed_pb2_grpc.EmbedderStub(channel)
-        response = stub.GetEmbedding(embed_pb2.EmbedRequest(texts=["오늘은 기분이 좋다.", "테스트 문장입니다."]))
+        response = stub.GetEmbedding(embed_pb2.EmbedRequest(texts=texts))
 
         if not response.embeddings:
             print(response)

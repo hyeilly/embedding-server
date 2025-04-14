@@ -1,0 +1,5 @@
+torch
+grpcio
+grpcio-tools
+sentence-transformers
+protobuf

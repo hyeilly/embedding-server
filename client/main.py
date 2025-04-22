@@ -1,33 +1,30 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import grpc
-
 from generated import embed_pb2, embed_pb2_grpc
-import numpy as np
 
 app = FastAPI()
 
-# gRPC 서버 주소
-GRPC_SERVER_ADDRESS = "192.168.170.217:50051"
-
-# 요청 모델
-class TextRequest(BaseModel):
+# 요청 바디 스키마
+class EmbedRequest(BaseModel):
     text: str
 
+# gRPC 채널 및 스텁 설정
+channel = grpc.insecure_channel("192.168.170.217:50051")
+stub = embed_pb2_grpc.EmbedderStub(channel)
+
 @app.post("/embed")
-async def embed_text(request: TextRequest):
-    # gRPC 채널 열기
-    channel = grpc.insecure_channel(GRPC_SERVER_ADDRESS)
-    stub = embed_pb2_grpc.EmbedderStub(channel)
-    response = stub.GetEmbedding(embed_pb2.EmbedRequest(texts=[request.text]))
-    if not response.embeddings:
-        return {"result": False}
+def get_embedding(request: EmbedRequest):
     try:
-        embedding_matrix = np.array(response.embeddings).reshape(-1, response.dimension)
-        print(embedding_matrix)
-    except ValueError as e:
-        print(f"배열 reshape 오류: {e}")
+        grpc_request = embed_pb2.EmbedRequest(texts=[request.text])
+        grpc_response = stub.GetEmbedding(grpc_request)
 
-    return {"embedding": embedding_matrix.tolist()}
+        # 첫 번째 결과만 사용한다고 가정
+        result = {
+            "dimension": grpc_response.dimension,
+            "embedding": list(grpc_response.vectors[0].values)
+        }
+        return result
 
-
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
